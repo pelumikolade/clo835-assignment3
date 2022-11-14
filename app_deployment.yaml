@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deployment
+  labels:
+    app: employees
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: employees
+  template:
+    metadata:
+      labels:
+        app: employees
+    spec:
+      containers:
+        - name: app
+          image: 645402193523.dkr.ecr.us-east-1.amazonaws.com/app-repo:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DBPWD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-pass
+                  key: password
+            - name: DBPORT
+              value: "3306"
+            - name: DBHOST
+              value: 10.244.0.5
