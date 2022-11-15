@@ -10,14 +10,14 @@ data:
 
   FLASK_APP: app.py
 
-  MYSQL_ROOT_USER: root
+  DB_USER: root
 
-  MYSQL_ROOT_PASSWORD: admin
+  DB_HOST: "10.100.125.153"
 
-  MYSQL_ROOT_HOST: "<plase holder>"
+  DB_PORT: "3306"
 
-  MYSQL_ROOT_PORT: "3306"
-
-  MYSQL_ROOT_DB: mydb
+  DATABASE: mydb
+  
+  COLOR_FROM_ENV: blue
 
   FLASK_APP_PORT: "8282"
