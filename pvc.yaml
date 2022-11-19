@@ -2,12 +2,12 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mysql-pvc
-  labels: 
-    app: db
+  annotations:
+    volume.beta.kubernetes.io/storage-class: gp2-sc
 spec: 
   accessModes:
-    - ReadWriteOnce
-  storageClassName: gp2-sc
+  - ReadWriteOnce
   resources: 
     requests:
       storage: 4Gi
+  volumeMode: Filesystem
