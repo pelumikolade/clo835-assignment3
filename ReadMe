@@ -5,6 +5,9 @@ Prequisites:
 Images are pushed to a repo
 EKS Cluster with 2 Worker Nodes is Deployed
 Steps:
+
+Using Storage class and PVC
+
 #Create base64 encoded password
 voclabs:~/environment (master) $ echo -n 'admin' | base64
 #Create the Namspace
@@ -19,325 +22,442 @@ voclabs:~/environment (master) $ k create -f storage_class.yaml -n lab3
 voclabs:~/environment (master) $ k create -f pv.yaml -n lab3
 #Create PVC
 voclabs:~/environment (master) $ k create -f pvc.yaml -n lab3                                                                                                                                                                                       
-persistentvolumeclaim/mysql-pvc created
-voclabs:~/environment (master) $ k apply -f db-deployment.yam
-error: the path "db-deployment.yam" does not exist
+#Create the deployment of the Database
 voclabs:~/environment (master) $ k apply -f db-deployment.yaml -n lab3
-deployment.apps/db-deployment created
+#Create deployment of the cluster IP service for the Database
 voclabs:~/environment (master) $ k create -f db-service.yaml -n lab3
-service/db-service created
+#Verify that the database and service has been created
 voclabs:~/environment (master) $ k get all -n lab3
-NAME                                 READY   STATUS    RESTARTS   AGE
-pod/db-deployment-69448c6c4d-z96pd   1/1     Running   0          69s
-
-NAME                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
-service/db-service   ClusterIP   10.100.125.61   <none>        3306/TCP   24s
-
-NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/db-deployment   1/1     1            1           69s
-
-NAME                                       DESIRED   CURRENT   READY   AGE
-replicaset.apps/db-deployment-69448c6c4d   1         1         1       69s
+#Create the app deployment
 voclabs:~/environment (master) $ k apply -f app-deployment.yaml -n lab3
-deployment.apps/app-deployment created
-voclabs:~/environment (master) $ k get all -n lab3                                                                                                                                                                                
-NAME                                  READY   STATUS              RESTARTS   AGE
-pod/app-deployment-6958c8d48b-b5bzt   0/1     ContainerCreating   0          7s
-pod/app-deployment-6958c8d48b-kjtdf   0/1     ContainerCreating   0          7s
-pod/db-deployment-69448c6c4d-z96pd    1/1     Running             0          2m3s
-
-NAME                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
-service/db-service   ClusterIP   10.100.125.61   <none>        3306/TCP   78s
-
-NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/app-deployment   0/2     2            0           7s
-deployment.apps/db-deployment    1/1     1            1           2m3s
-
-NAME                                        DESIRED   CURRENT   READY   AGE
-replicaset.apps/app-deployment-6958c8d48b   2         2         0       7s
-replicaset.apps/db-deployment-69448c6c4d    1         1         1       2m3s
-voclabs:~/environment (master) $ k get all -n lab3
-NAME                                  READY   STATUS    RESTARTS   AGE
-pod/app-deployment-6958c8d48b-b5bzt   1/1     Running   0          17s
-pod/app-deployment-6958c8d48b-kjtdf   1/1     Running   0          17s
-pod/db-deployment-69448c6c4d-z96pd    1/1     Running   0          2m13s
-
-NAME                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
-service/db-service   ClusterIP   10.100.125.61   <none>        3306/TCP   88s
-
-NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/app-deployment   2/2     2            2           17s
-deployment.apps/db-deployment    1/1     1            1           2m13s
-
-NAME                                        DESIRED   CURRENT   READY   AGE
-replicaset.apps/app-deployment-6958c8d48b   2         2         2       17s
-replicaset.apps/db-deployment-69448c6c4d    1         1         1       2m13s
+#Create Service type Load Balancer for the application
 voclabs:~/environment (master) $ k create -f app-service.yaml -n lab3
-service/app-service created
+#Verify the app and its service has been deployed
 voclabs:~/environment (master) $ k get all -n lab3
-NAME                                  READY   STATUS    RESTARTS   AGE
-pod/app-deployment-6958c8d48b-b5bzt   1/1     Running   0          58s
-pod/app-deployment-6958c8d48b-kjtdf   1/1     Running   0          58s
-pod/db-deployment-69448c6c4d-z96pd    1/1     Running   0          2m54s
-
-NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)          AGE
-service/app-service   LoadBalancer   10.100.92.234   a5d6959c46b2e46399ddc437426f3627-1993196841.us-east-1.elb.amazonaws.com   8080:30665/TCP   12s
-service/db-service    ClusterIP      10.100.125.61   <none>                                                                    3306/TCP         2m9s
-
-NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/app-deployment   2/2     2            2           58s
-deployment.apps/db-deployment    1/1     1            1           2m54s
-
-NAME                                        DESIRED   CURRENT   READY   AGE
-replicaset.apps/app-deployment-6958c8d48b   2         2         2       58s
-replicaset.apps/db-deployment-69448c6c4d    1         1         1       2m54s
-voclabs:~/environment (master) $ k delete pod/db-deployment-69448c6c4d-z96pd -n lab3
-pod "db-deployment-69448c6c4d-z96pd" deleted
+#get the external IP (URL) of the load balancer, it should look like this a5d6959c46b2e46399ddc437426f3627-1993196841.us-east-1.elb.amazonaws.com
+#Paste the url in a browser with a column and the exposed port. In this case it is "a5d6959c46b2e46399ddc437426f3627-1993196841.us-east-1.elb.amazonaws.com:8080"
+#Add some data into the database
+#Delete the running database pod
+voclabs:~/environment (master) $ k delete <name of running database pod> -n lab3
+#Verify that another db pod has been created to replace the deleted one
 voclabs:~/environment (master) $ k get all -n lab3
-NAME                                  READY   STATUS    RESTARTS   AGE
-pod/app-deployment-6958c8d48b-b5bzt   1/1     Running   0          6m21s
-pod/app-deployment-6958c8d48b-kjtdf   1/1     Running   0          6m21s
-pod/db-deployment-69448c6c4d-tpzw8    1/1     Running   0          40s
-
-NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)          AGE
-service/app-service   LoadBalancer   10.100.92.234   a5d6959c46b2e46399ddc437426f3627-1993196841.us-east-1.elb.amazonaws.com   8080:30665/TCP   5m35s
-service/db-service    ClusterIP      10.100.125.61   <none>                                                                    3306/TCP         7m32s
-
-NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/app-deployment   2/2     2            2           6m21s
-deployment.apps/db-deployment    1/1     1            1           8m17s
-
-NAME                                        DESIRED   CURRENT   READY   AGE
-replicaset.apps/app-deployment-6958c8d48b   2         2         2       6m21s
-replicaset.apps/db-deployment-69448c6c4d    1         1         1       8m17s
-voclabs:~/environment (master) $ exec db-deployment-69448c6c4d-tpzw8 -n lab3 -it -- bash
-bash: exec: db-deployment-69448c6c4d-tpzw8: not found
-voclabs:~/environment (master) $ k exec db-deployment-69448c6c4d-tpzw8 -n lab3 -it -- bash
-bash-4.4# echo $MYSQL_ROOT_PASSWORD
-admin
-bash-4.4# mysql --user=root --password=$MYSQL_ROOT_PASSWORD
-mysql: [Warning] Using a password on the command line interface can be insecure.
-Welcome to the MySQL monitor.  Commands end with ; or \g.
-Your MySQL connection id is 9
-Server version: 8.0.31 MySQL Community Server - GPL
-
-Copyright (c) 2000, 2022, Oracle and/or its affiliates.
-
-Oracle is a registered trademark of Oracle Corporation and/or its
-affiliates. Other names may be trademarks of their respective
-owners.
-
-Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
-
-mysql> use employees;
-Reading table information for completion of table and column names
-You can turn off this feature to get a quicker startup with -A
-
-Database changed
-mysql> select * from employee;
-+--------+------------+---------------+---------------+----------+
-| emp_id | first_name | last_name     | primary_skill | location |
-+--------+------------+---------------+---------------+----------+
-| 1      | Amanda     | Williams      | Smile         | local    |
-| 1      | Alan       | Williams      | Empathy       | alien    |
-| 1      | Amanda     | Williams      | Smile         | local    |
-| 1      | Alan       | Williams      | Empathy       | alien    |
-| 1      | Amanda     | Williams      | Smile         | local    |
-| 1      | Alan       | Williams      | Empathy       | alien    |
-| 11     | tobi       | Kolade        | dev           | toronto  |
-| 11     | Damilola   | Pelumi-Kolade | BA            | toronto  |
-| 12     | John       | Wick          | Actor         | New York |
-| 1      | Amanda     | Williams      | Smile         | local    |
-| 1      | Alan       | Williams      | Empathy       | alien    |
-+--------+------------+---------------+---------------+----------+
-11 rows in set (0.00 sec)
-
-mysql> quit
-Bye
-bash-4.4# exit
-exit
+#Delete the app pods as well so that the app deployemnt can replace with new pods
+voclabs:~/environment (master) $ k delete <name of app pod1> <name of app pod2> -n lab3
+#Verify new app pods were created
 voclabs:~/environment (master) $ k get all -n lab3
-NAME                                  READY   STATUS    RESTARTS   AGE
-pod/app-deployment-6958c8d48b-b5bzt   1/1     Running   0          15m
-pod/app-deployment-6958c8d48b-kjtdf   1/1     Running   0          15m
-pod/db-deployment-69448c6c4d-tpzw8    1/1     Running   0          9m45s
-
-NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)          AGE
-service/app-service   LoadBalancer   10.100.92.234   a5d6959c46b2e46399ddc437426f3627-1993196841.us-east-1.elb.amazonaws.com   8080:30665/TCP   14m
-service/db-service    ClusterIP      10.100.125.61   <none>                                                                    3306/TCP         16m
-
-NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/app-deployment   2/2     2            2           15m
-deployment.apps/db-deployment    1/1     1            1           17m
-
-NAME                                        DESIRED   CURRENT   READY   AGE
-replicaset.apps/app-deployment-6958c8d48b   2         2         2       15m
-replicaset.apps/db-deployment-69448c6c4d    1         1         1       17m
-voclabs:~/environment (master) $ k delete pod/app-deployment-6958c8d48b-kjtdf pod/app-deployment-6958c8d48b-b5bzt
-Error from server (NotFound): pods "app-deployment-6958c8d48b-kjtdf" not found
-Error from server (NotFound): pods "app-deployment-6958c8d48b-b5bzt" not found
-voclabs:~/environment (master) $ k delete pod/app-deployment-6958c8d48b-kjtdf pod/app-deployment-6958c8d48b-b5bzt -n lab3
-pod "app-deployment-6958c8d48b-kjtdf" deleted
-pod "app-deployment-6958c8d48b-b5bzt" deleted
-voclabs:~/environment (master) $ k get all -n lab3
-NAME                                  READY   STATUS    RESTARTS   AGE
-pod/app-deployment-6958c8d48b-svsgg   1/1     Running   0          24s
-pod/app-deployment-6958c8d48b-t77sl   1/1     Running   0          24s
-pod/db-deployment-69448c6c4d-tpzw8    1/1     Running   0          12m
-
-NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)          AGE
-service/app-service   LoadBalancer   10.100.92.234   a5d6959c46b2e46399ddc437426f3627-1993196841.us-east-1.elb.amazonaws.com   8080:30665/TCP   16m
-service/db-service    ClusterIP      10.100.125.61   <none>                                                                    3306/TCP         18m
-
-NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/app-deployment   2/2     2            2           17m
-deployment.apps/db-deployment    1/1     1            1           19m
-
-NAME                                        DESIRED   CURRENT   READY   AGE
-replicaset.apps/app-deployment-6958c8d48b   2         2         2       17m
-replicaset.apps/db-deployment-69448c6c4d    1         1         1       19m
-voclabs:~/environment (master) $ 
+#Navigate back to the browser, refresh the url and try to retrieve the data that was stored.
 
 Using Hostpath
-
+# Create a new namespace
 voclabs:~/environment (master) $ k create ns lab7
-namespace/lab7 created
+#Create secret for the db and app
 voclabs:~/environment (master) $ k create -f secrets.yaml -n lab7
-secret/mysql-pass created
+#Create the configmap
 voclabs:~/environment (master) $ k create -f config-map.yaml -n lab7                                                                                                                                                                                
-configmap/app-config created
+#Create persistent volume
 voclabs:~/environment (master) $ k create -f pv-hp.yaml -n lab7                                                                                                                                                                                     
-persistentvolume/mysql-pv-hp created
+#Create persistent volume vlaim
 voclabs:~/environment (master) $ k create -f pvc-hp.yaml -n lab7                                                                                                                                                                                    
-Error from server (Forbidden): error when creating "pvc-hp.yaml": persistentvolumeclaims "mysql-pvc-hp" is forbidden: Internal error occurred: 2 default StorageClasses were found
-voclabs:~/environment (master) $ k create -f pvc-hp.yaml -n lab7
-persistentvolumeclaim/mysql-pvc-hp created
+#create the db deployment using hostpath
 voclabs:~/environment (master) $ k create -f ab-deployment-hp.yaml -n lab7                                                                                                                                                                          
-error: the path "ab-deployment-hp.yaml" does not exist
-voclabs:~/environment (master) $ k create -f db-deployment-hp.yaml -n lab7                                                                                                                                                                          
-deployment.apps/db-deployment created
+#Verify the db pod was created
 voclabs:~/environment (master) $ k po -n lab7
-error: unknown command "po" for "kubectl"
-
-Did you mean this?
-        top
-        port-forward
-        cp
-voclabs:~/environment (master) $ k get po -n lab7                                                                                                                                                                                                   
-NAME                             READY   STATUS    RESTARTS   AGE
-db-deployment-6b498f5965-d4p8x   1/1     Running   0          72s
-voclabs:~/environment (master) $ k create -f db-service.yaml
-service/db-service created
+#Create the db service
+voclabs:~/environment (master) $ k create -f db-service.yaml -lab7
+#create the app deployment
 voclabs:~/environment (master) $ k apply -f app-deployment.yaml -n lab7
-deployment.apps/app-deployment created
+#Verify the app has been deployed
 voclabs:~/environment (master) $ k get po -n lab7
-NAME                              READY   STATUS    RESTARTS   AGE
-app-deployment-6958c8d48b-dtpgr   0/1     Error     2          24s
-app-deployment-6958c8d48b-qxpxb   0/1     Error     2          24s
-db-deployment-6b498f5965-d4p8x    1/1     Running   0          4m19s
-voclabs:~/environment (master) $ k logs app-deployment-6958c8d48b-qxpxb -n lab7
-Traceback (most recent call last):
-  File "/usr/local/lib/python3.8/dist-packages/pymysql/connections.py", line 613, in connect
-    sock = socket.create_connection(
-  File "/usr/lib/python3.8/socket.py", line 787, in create_connection
-    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
-  File "/usr/lib/python3.8/socket.py", line 918, in getaddrinfo
-    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
-socket.gaierror: [Errno -2] Name or service not known
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "app.py", line 18, in <module>
-    db_conn = connections.Connection(
-  File "/usr/local/lib/python3.8/dist-packages/pymysql/connections.py", line 353, in __init__
-    self.connect()
-  File "/usr/local/lib/python3.8/dist-packages/pymysql/connections.py", line 664, in connect
-    raise exc
-pymysql.err.OperationalError: (2003, "Can't connect to MySQL server on 'db-service' ([Errno -2] Name or service not known)")
-voclabs:~/environment (master) $ k create -f db-service.yaml -n lab7                                                                                                                                                                     
-service/db-service created
-voclabs:~/environment (master) $ k delete svc db-service
-service "db-service" deleted
-voclabs:~/environment (master) $ k get po -n lab7
-NAME                              READY   STATUS    RESTARTS   AGE
-app-deployment-6958c8d48b-dtpgr   1/1     Running   4          111s
-app-deployment-6958c8d48b-qxpxb   1/1     Running   4          111s
-db-deployment-6b498f5965-d4p8x    1/1     Running   0          5m46s
+#Deploy the app service
 voclabs:~/environment (master) $ k create -f app-service.yaml -n lab7
-service/app-service created
+#get the url for te load balancer like we did before
 voclabs:~/environment (master) $ k get svc -n lab7
 NAME          TYPE           CLUSTER-IP      EXTERNAL-IP                                                              PORT(S)          AGE
 app-service   LoadBalancer   10.100.30.173   a25d14f6e0ad74c82bacfcf36f24366f-129326745.us-east-1.elb.amazonaws.com   8080:32004/TCP   13s
 db-service    ClusterIP      10.100.23.249   <none>                                                                   3306/TCP         2m9s
-voclabs:~/environment (master) $ k get po -n lab7
+#open a browser and verify you have access to the app.
+#Perform all other checks by deleting the pods and checking for persistent data like we did before.
+
+Bonus
+Using configmap
+Preequiste: The db and cluster ip service is already running 
+
+Steps:
+voclabs:~/environment (master) $ k create -f secret.yaml -n lab3
+secret/mysql-pass created
+voclabs:~/environment (master) $ k create -f config-map.yaml -n lab3                                                                                                                                                                                
+configmap/app-config created
+voclabs:~/environment (master) $ k create -f storage_class.yaml -n lab3                                                                                                                                                                             
+storageclass.storage.k8s.io/gp2-sc created
+voclabs:~/environment (master) $ k create -f pvc.yaml -n lab3                                                                                                                                                                                       
+persistentvolumeclaim/mysql-pvc created
+voclabs:~/environment (master) $ k get pvc
+No resources found in default namespace.
+voclabs:~/environment (master) $ k get pvc -n lab3
+NAME        STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+mysql-pvc   Bound    pvc-b531a16d-1995-4ad1-a03c-36dd3650fa0d   4Gi        RWO            gp2-sc         13s
+voclabs:~/environment (master) $ k apply -f db-deploment.yaml -n lab3
+error: the path "db-deploment.yaml" does not exist
+voclabs:~/environment (master) $ k apply -f db-deployment.yaml -n lab3                                                                                                                                                                              
+deployment.apps/db-deployment created
+voclabs:~/environment (master) $ k apply -f db-service.yaml -n lab3                                                                                                                                                                                 
+service/db-service created
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                             READY   STATUS                       RESTARTS   AGE
+db-deployment-69448c6c4d-wbw87   0/1     CreateContainerConfigError   0          69s
+voclabs:~/environment (master) $ k logs db-deployment-69448c6c4d-wbw87
+Error from server (NotFound): pods "db-deployment-69448c6c4d-wbw87" not found
+voclabs:~/environment (master) $ k logs db-deployment-69448c6c4d-wbw87 -n lab3
+Error from server (BadRequest): container "mysql" in pod "db-deployment-69448c6c4d-wbw87" is waiting to start: CreateContainerConfigError
+voclabs:~/environment (master) $ k describe pod db-deployment-69448c6c4d-wbw87 -n lab3
+Name:             db-deployment-69448c6c4d-wbw87
+Namespace:        lab3
+Priority:         0
+Service Account:  default
+Node:             ip-192-168-38-218.ec2.internal/192.168.38.218
+Start Time:       Tue, 22 Nov 2022 01:50:16 +0000
+Labels:           app=mysql
+                  pod-template-hash=69448c6c4d
+Annotations:      kubernetes.io/psp: eks.privileged
+Status:           Pending
+IP:               192.168.38.173
+IPs:
+  IP:           192.168.38.173
+Controlled By:  ReplicaSet/db-deployment-69448c6c4d
+Containers:
+  mysql:
+    Container ID:   
+    Image:          645402193523.dkr.ecr.us-east-1.amazonaws.com/mydb:1
+    Image ID:       
+    Port:           <none>
+    Host Port:      <none>
+    State:          Waiting
+      Reason:       CreateContainerConfigError
+    Ready:          False
+    Restart Count:  0
+    Environment:
+      MYSQL_ROOT_PASSWORD:  <set to the key 'password' in secret 'mysql-pass'>     Optional: false
+      mysql:                <set to the key 'DB_PORT' of config map 'app-config'>  Optional: false
+    Mounts:
+      /var/lib/mysql from mysql-db (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-nx8tt (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             False 
+  ContainersReady   False 
+  PodScheduled      True 
+Volumes:
+  mysql-db:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  mysql-pvc
+    ReadOnly:   false
+  kube-api-access-nx8tt:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason                  Age                 From                     Message
+  ----     ------                  ----                ----                     -------
+  Normal   Scheduled               2m28s               default-scheduler        Successfully assigned lab3/db-deployment-69448c6c4d-wbw87 to ip-192-168-38-218.ec2.internal
+  Normal   SuccessfulAttachVolume  2m24s               attachdetach-controller  AttachVolume.Attach succeeded for volume "pvc-b531a16d-1995-4ad1-a03c-36dd3650fa0d"
+  Normal   Pulling                 2m21s               kubelet                  Pulling image "645402193523.dkr.ecr.us-east-1.amazonaws.com/mydb:1"
+  Normal   Pulled                  2m9s                kubelet                  Successfully pulled image "645402193523.dkr.ecr.us-east-1.amazonaws.com/mydb:1" in 12.188871525s
+  Warning  Failed                  1s (x12 over 2m9s)  kubelet                  Error: couldn't find key password in Secret lab3/mysql-pass
+  Normal   Pulled                  1s (x11 over 2m8s)  kubelet                  Container image "645402193523.dkr.ecr.us-east-1.amazonaws.com/mydb:1" already present on machine
+voclabs:~/environment (master) $ k describe secret mysql-pass -n lab3
+Name:         mysql-pass
+Namespace:    lab3
+Labels:       <none>
+Annotations:  <none>
+
+Type:  Opaque
+
+Data
+====
+color:  3 bytes
+voclabs:~/environment (master) $ k get all -n lab3
+NAME                                 READY   STATUS                       RESTARTS   AGE
+pod/db-deployment-69448c6c4d-wbw87   0/1     CreateContainerConfigError   0          5m12s
+
+NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+service/db-service   ClusterIP   10.100.164.7   <none>        3306/TCP   4m13s
+
+NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/db-deployment   0/1     1            0           5m12s
+
+NAME                                       DESIRED   CURRENT   READY   AGE
+replicaset.apps/db-deployment-69448c6c4d   1         1         0       5m12s
+voclabs:~/environment (master) $ k delete deployment.apps/db-deployment -n lab3
+deployment.apps "db-deployment" deleted
+voclabs:~/environment (master) $ k get secret -n lab3
+NAME                  TYPE                                  DATA   AGE
+default-token-gtk7j   kubernetes.io/service-account-token   3      9m48s
+mysql-pass            Opaque                                1      9m25s
+voclabs:~/environment (master) $ k delete secret mysql-pass
+Error from server (NotFound): secrets "mysql-pass" not found
+voclabs:~/environment (master) $ k delete secret mysql-pass -n lab3
+secret "mysql-pass" deleted
+voclabs:~/environment (master) $ k create -f secret.yaml -n lab3
+secret/mysql-secret created
+voclabs:~/environment (master) $ k apply -f db-deployment.yaml -n lab3
+deployment.apps/db-deployment created
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                             READY   STATUS                       RESTARTS   AGE
+db-deployment-69448c6c4d-jjwbh   0/1     CreateContainerConfigError   0          17s
+voclabs:~/environment (master) $ k get all -n lab3
+NAME                                 READY   STATUS                       RESTARTS   AGE
+pod/db-deployment-69448c6c4d-jjwbh   0/1     CreateContainerConfigError   0          61s
+
+NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+service/db-service   ClusterIP   10.100.164.7   <none>        3306/TCP   12m
+
+NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/db-deployment   0/1     1            0           61s
+
+NAME                                       DESIRED   CURRENT   READY   AGE
+replicaset.apps/db-deployment-69448c6c4d   1         1         0       61s
+voclabs:~/environment (master) $ k delete deployment.apps/db-deployment
+Error from server (NotFound): deployments.apps "db-deployment" not found
+voclabs:~/environment (master) $ k delete deployment.apps/db-deployment -n lab3
+deployment.apps "db-deployment" deleted
+voclabs:~/environment (master) $ k apply -f db-deployment.yaml -n lab3                                                                                                                                                                              
+deployment.apps/db-deployment created
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                             READY   STATUS              RESTARTS   AGE
+db-deployment-5d99649d47-g6txf   0/1     ContainerCreating   0          4s
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                             READY   STATUS              RESTARTS   AGE
+db-deployment-5d99649d47-g6txf   0/1     ContainerCreating   0          9s
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                             READY   STATUS              RESTARTS   AGE
+db-deployment-5d99649d47-g6txf   0/1     ContainerCreating   0          12s
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                             READY   STATUS              RESTARTS   AGE
+db-deployment-5d99649d47-g6txf   0/1     ContainerCreating   0          15s
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                             READY   STATUS    RESTARTS   AGE
+db-deployment-5d99649d47-g6txf   1/1     Running   0          29s
+voclabs:~/environment (master) $ k apply -f db-service.yaml -n lab3
+service/db-service unchanged
+voclabs:~/environment (master) $ k get svc -n lab3
+NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+db-service   ClusterIP   10.100.164.7   <none>        3306/TCP   15m
+voclabs:~/environment (master) $ k apply -f app-deployment-color.yaml
+deployment.apps/app-deployment created
+voclabs:~/environment (master) $ k get po
+NAME                              READY   STATUS              RESTARTS   AGE
+app-deployment-7cc8b4c844-fb69j   0/1     ContainerCreating   0          13s
+app-deployment-7cc8b4c844-rdlvt   0/1     ContainerCreating   0          13s
+voclabs:~/environment (master) $ k get deployment
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE
+app-deployment   0/2     2            0           27s
+voclabs:~/environment (master) $ k delete deployment app-deployment
+deployment.apps "app-deployment" deleted
+voclabs:~/environment (master) $ k apply -f app-deployment-color.yaml -n lab3
+deployment.apps/app-deployment created
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                              READY   STATUS                       RESTARTS   AGE
+app-deployment-7cc8b4c844-fpm5r   0/1     CreateContainerConfigError   0          20s
+app-deployment-7cc8b4c844-nntks   0/1     CreateContainerConfigError   0          20s
+db-deployment-5d99649d47-g6txf    1/1     Running                      0          5m25s
+voclabs:~/environment (master) $ k logs app-deployment-7cc8b4c844-fpm5r
+Error from server (NotFound): pods "app-deployment-7cc8b4c844-fpm5r" not found
+voclabs:~/environment (master) $ k describe pod app-deployment-7cc8b4c844-fpm5r -n lab3
+Name:             app-deployment-7cc8b4c844-fpm5r
+Namespace:        lab3
+Priority:         0
+Service Account:  default
+Node:             ip-192-168-11-97.ec2.internal/192.168.11.97
+Start Time:       Tue, 22 Nov 2022 02:10:30 +0000
+Labels:           app=employees
+                  pod-template-hash=7cc8b4c844
+Annotations:      kubernetes.io/psp: eks.privileged
+Status:           Pending
+IP:               192.168.21.147
+IPs:
+  IP:           192.168.21.147
+Controlled By:  ReplicaSet/app-deployment-7cc8b4c844
+Containers:
+  app:
+    Container ID:   
+    Image:          645402193523.dkr.ecr.us-east-1.amazonaws.com/myapp:1
+    Image ID:       
+    Port:           8080/TCP
+    Host Port:      0/TCP
+    State:          Waiting
+      Reason:       CreateContainerConfigError
+    Ready:          False
+    Restart Count:  0
+    Environment:
+      DBPWD:      <set to the key 'password' in secret 'mysql-pass'>     Optional: false
+      DBPORT:     <set to the key 'DB_PORT' of config map 'app-config'>  Optional: false
+      DBHOST:     <set to the key 'DB_HOST' of config map 'app-config'>  Optional: false
+      APP_COLOR:  blue
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-fnsgp (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             False 
+  ContainersReady   False 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-fnsgp:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                From               Message
+  ----     ------     ----               ----               -------
+  Normal   Scheduled  63s                default-scheduler  Successfully assigned lab3/app-deployment-7cc8b4c844-fpm5r to ip-192-168-11-97.ec2.internal
+  Normal   Pulled     12s (x7 over 61s)  kubelet            Container image "645402193523.dkr.ecr.us-east-1.amazonaws.com/myapp:1" already present on machine
+  Warning  Failed     12s (x7 over 61s)  kubelet            Error: secret "mysql-pass" not found
+voclabs:~/environment (master) $ k get deployment -n lab3
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE
+app-deployment   0/2     2            0           104s
+db-deployment    1/1     1            1           6m49s
+voclabs:~/environment (master) $ k delete deployment app-deployment -n lab3
+deployment.apps "app-deployment" deleted
+voclabs:~/environment (master) $ k apply -f app-deployment-color.yaml -n lab3                                                                                                                                                                       
+deployment.apps/app-deployment created
+voclabs:~/environment (master) $ k get po -n lab3
 NAME                              READY   STATUS    RESTARTS   AGE
-app-deployment-6958c8d48b-dtpgr   1/1     Running   4          6m5s
-app-deployment-6958c8d48b-qxpxb   1/1     Running   4          6m5s
-db-deployment-6b498f5965-d4p8x    1/1     Running   0          10m
-voclabs:~/environment (master) $ k get po -n lab7 -o wide
-NAME                              READY   STATUS    RESTARTS   AGE     IP               NODE                            NOMINATED NODE   READINESS GATES
-app-deployment-6958c8d48b-dtpgr   1/1     Running   4          8m41s   192.168.16.13    ip-192-168-0-242.ec2.internal   <none>           <none>
-app-deployment-6958c8d48b-qxpxb   1/1     Running   4          8m41s   192.168.69.160   ip-192-168-93-28.ec2.internal   <none>           <none>
-db-deployment-6b498f5965-d4p8x    1/1     Running   0          12m     192.168.89.142   ip-192-168-93-28.ec2.internal   <none>           <none>
-voclabs:~/environment (master) $ k delete po db-deployment-6b498f5965-d4p8x -n lab7
-pod "db-deployment-6b498f5965-d4p8x" deleted
-voclabs:~/environment (master) $ k get po -n lab7 -o wide
-NAME                              READY   STATUS    RESTARTS   AGE     IP               NODE                            NOMINATED NODE   READINESS GATES
-app-deployment-6958c8d48b-dtpgr   1/1     Running   4          9m30s   192.168.16.13    ip-192-168-0-242.ec2.internal   <none>           <none>
-app-deployment-6958c8d48b-qxpxb   1/1     Running   4          9m30s   192.168.69.160   ip-192-168-93-28.ec2.internal   <none>           <none>
-db-deployment-6b498f5965-7zkxq    1/1     Running   0          18s     192.168.89.28    ip-192-168-93-28.ec2.internal   <none>           <none>
-voclabs:~/environment (master) $ k delete po app-deployment-6958c8d48b-dtpgr app-deployment-6958c8d48b-qxpxb -n lab7
-pod "app-deployment-6958c8d48b-dtpgr" deleted
-pod "app-deployment-6958c8d48b-qxpxb" deleted
-voclabs:~/environment (master) $ k get po -n lab7 -o wide
-NAME                              READY   STATUS    RESTARTS   AGE    IP               NODE                            NOMINATED NODE   READINESS GATES
-app-deployment-6958c8d48b-6sh8j   1/1     Running   0          27s    192.168.89.142   ip-192-168-93-28.ec2.internal   <none>           <none>
-app-deployment-6958c8d48b-vmt6b   1/1     Running   0          27s    192.168.10.110   ip-192-168-0-242.ec2.internal   <none>           <none>
-db-deployment-6b498f5965-7zkxq    1/1     Running   0          117s   192.168.89.28    ip-192-168-93-28.ec2.internal   <none>           <none>
-voclabs:~/environment (master) $ k exec db-deployment-6b498f5965-7zkxq -n lab3 -it -- bash
-Error from server (NotFound): namespaces "lab3" not found
-voclabs:~/environment (master) $ k exec db-deployment-6b498f5965-7zkxq -n lab7 -it -- bash                                                                                                                                                          
-bash-4.4# echo $MYSQL_ROOT_PASSWORD
-admin
-bash-4.4# mysql --user=root --password=$MYSQL_ROOT_PASSWORD
-mysql: [Warning] Using a password on the command line interface can be insecure.
-Welcome to the MySQL monitor.  Commands end with ; or \g.
-Your MySQL connection id is 13
-Server version: 8.0.31 MySQL Community Server - GPL
-
-Copyright (c) 2000, 2022, Oracle and/or its affiliates.
-
-Oracle is a registered trademark of Oracle Corporation and/or its
-affiliates. Other names may be trademarks of their respective
-owners.
-
-Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
-
-mysql> use employees;
-Reading table information for completion of table and column names
-You can turn off this feature to get a quicker startup with -A
-
-Database changed
-mysql> select * from employee;
-+--------+------------+-----------+---------------+----------+
-| emp_id | first_name | last_name | primary_skill | location |
-+--------+------------+-----------+---------------+----------+
-| 1      | Amanda     | Williams  | Smile         | local    |
-| 1      | Alan       | Williams  | Empathy       | alien    |
-| 1      | Amanda     | Williams  | Smile         | local    |
-| 1      | Alan       | Williams  | Empathy       | alien    |
-| 1      | Amanda     | Williams  | Smile         | local    |
-| 1      | Alan       | Williams  | Empathy       | alien    |
-| 10     | tobi       | Kolade    | dev           | toronto  |
-| 11     | John       | Wick      | Actor         | New York |
-| 1      | Amanda     | Williams  | Smile         | local    |
-| 1      | Alan       | Williams  | Empathy       | alien    |
-+--------+------------+-----------+---------------+----------+
-10 rows in set (0.00 sec)
-
-mysql> quit
-Bye
-bash-4.4# exit
-exit
-voclabs:~/environment (master) $ k delete 
+app-deployment-68dd8b769c-g9djc   1/1     Running   0          12s
+app-deployment-68dd8b769c-p5tvb   1/1     Running   0          12s
+db-deployment-5d99649d47-g6txf    1/1     Running   0          7m31s
+voclabs:~/environment (master) $ k create -f app-service.yaml -n lab3
+service/app-service created
+voclabs:~/environment (master) $ k get svc -n lab3
+NAME          TYPE           CLUSTER-IP      EXTERNAL-IP                                                              PORT(S)          AGE
+app-service   LoadBalancer   10.100.34.114   ab6830f235a9f4525adca04c7e58be98-978973710.us-east-1.elb.amazonaws.com   8080:30067/TCP   14s
+db-service    ClusterIP      10.100.164.7    <none>                                                                   3306/TCP         22m
+voclabs:~/environment (master) $ k delete deployment app-deployment -n lab3
+deployment.apps "app-deployment" deleted
+voclabs:~/environment (master) $ k apply -f app-deployment-color-cm.yaml -n lab3
+deployment.apps/app-deployment created
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                              READY   STATUS                       RESTARTS   AGE
+app-deployment-86597864d4-85wts   0/1     CreateContainerConfigError   0          56s
+app-deployment-86597864d4-vxmtb   0/1     CreateContainerConfigError   0          56s
+db-deployment-5d99649d47-g6txf    1/1     Running                      0          13m
+voclabs:~/environment (master) $ k delete deployment app-deployment -n lab3
+deployment.apps "app-deployment" deleted
+voclabs:~/environment (master) $ k apply -f app-deployment-color-cm.yaml -n lab3                                                                                                                                                                    
+deployment.apps/app-deployment created
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                              READY   STATUS    RESTARTS   AGE
+app-deployment-57bcc9b9d5-r48g9   1/1     Running   0          6s
+app-deployment-57bcc9b9d5-wjjsb   1/1     Running   0          6s
+db-deployment-5d99649d47-g6txf    1/1     Running   0          14m
+voclabs:~/environment (master) $ k delete deployment app-deployment -n lab3
+deployment.apps "app-deployment" deleted
+voclabs:~/environment (master) $ k apply -f app-deployment-color-secret.yaml -n lab3                                                                                                                                                                
+error: error validating "app-deployment-color-secret.yaml": error validating data: apiVersion not set; if you choose to ignore these errors, turn validation off with --validate=false
+voclabs:~/environment (master) $ k apply -f app-deployment-color-secret.yaml -n lab3
+deployment.apps/app-deployment created
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                              READY   STATUS             RESTARTS   AGE
+app-deployment-849dbbcbcd-rnz2k   0/1     CrashLoopBackOff   1          15s
+app-deployment-849dbbcbcd-vc9vc   0/1     CrashLoopBackOff   1          15s
+db-deployment-5d99649d47-g6txf    1/1     Running            0          17m
+voclabs:~/environment (master) $ k describe app-deployment-849dbbcbcd-rnz2k -n lab3
+error: the server doesn't have a resource type "app-deployment-849dbbcbcd-rnz2k"
+voclabs:~/environment (master) $ k describe pod app-deployment-849dbbcbcd-rnz2k -n lab3                                                                                                                                                             
+Name:             app-deployment-849dbbcbcd-rnz2k
+Namespace:        lab3
+Priority:         0
+Service Account:  default
+Node:             ip-192-168-11-97.ec2.internal/192.168.11.97
+Start Time:       Tue, 22 Nov 2022 02:22:24 +0000
+Labels:           app=employees
+                  pod-template-hash=849dbbcbcd
+Annotations:      kubernetes.io/psp: eks.privileged
+Status:           Running
+IP:               192.168.21.147
+IPs:
+  IP:           192.168.21.147
+Controlled By:  ReplicaSet/app-deployment-849dbbcbcd
+Containers:
+  app:
+    Container ID:   docker://7348f08b4e3d9362d093a1d72158c12f1a7f2c6eeb69ead199a2a1881589f0f3
+    Image:          645402193523.dkr.ecr.us-east-1.amazonaws.com/myapp:1
+    Image ID:       docker-pullable://645402193523.dkr.ecr.us-east-1.amazonaws.com/myapp@sha256:ff653ed667aa516e9330b9380a598a14466f276e3421e737b135609b0940e44b
+    Port:           8080/TCP
+    Host Port:      0/TCP
+    State:          Terminated
+      Reason:       Error
+      Exit Code:    1
+      Started:      Tue, 22 Nov 2022 02:23:08 +0000
+      Finished:     Tue, 22 Nov 2022 02:23:08 +0000
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    1
+      Started:      Tue, 22 Nov 2022 02:22:43 +0000
+      Finished:     Tue, 22 Nov 2022 02:22:43 +0000
+    Ready:          False
+    Restart Count:  3
+    Environment:
+      DBPWD:      <set to the key 'password' in secret 'mysql-secret'>   Optional: false
+      DBPORT:     <set to the key 'DB_PORT' of config map 'app-config'>  Optional: false
+      DBHOST:     <set to the key 'DB_HOST' of config map 'app-config'>  Optional: false
+      APP_COLOR:  <set to the key 'color' in secret 'mysql-secret'>      Optional: false
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-5r8wj (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             False 
+  ContainersReady   False 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-5r8wj:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age               From               Message
+  ----     ------     ----              ----               -------
+  Normal   Scheduled  49s               default-scheduler  Successfully assigned lab3/app-deployment-849dbbcbcd-rnz2k to ip-192-168-11-97.ec2.internal
+  Normal   Pulled     5s (x4 over 48s)  kubelet            Container image "645402193523.dkr.ecr.us-east-1.amazonaws.com/myapp:1" already present on machine
+  Normal   Created    5s (x4 over 48s)  kubelet            Created container app
+  Normal   Started    5s (x4 over 48s)  kubelet            Started container app
+  Warning  BackOff    4s (x5 over 46s)  kubelet            Back-off restarting failed container
+voclabs:~/environment (master) $ k logs app-deployment-849dbbcbcd-rnz2k -n lab3
+No Command line argument. Color from environment variable =n[�
+Color not supported. Received 'n[�' expected one of red,green,blue,blue2,pink,darkblue,lime
+voclabs:~/environment (master) $ k delete deployment app-deployment -n lab3
+deployment.apps "app-deployment" deleted
+voclabs:~/environment (master) $ k delete secret mysql-secret -n lab3
+secret "mysql-secret" deleted
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                             READY   STATUS    RESTARTS   AGE
+db-deployment-5d99649d47-g6txf   1/1     Running   0          22m
+voclabs:~/environment (master) $ k create -f secret.yaml -n lab3
+secret/mysql-secret created
+voclabs:~/environment (master) $ k apply -f app-deployment-color-secret.yaml -n lab3                                                                                                                                                                
+deployment.apps/app-deployment created
+voclabs:~/environment (master) $ k get po -n lab3
+NAME                              READY   STATUS    RESTARTS   AGE
+app-deployment-849dbbcbcd-bhjzb   1/1     Running   0          8s
+app-deployment-849dbbcbcd-tlb2x   1/1     Running   0          8s
+db-deployment-5d99649d47-g6txf    1/1     Running   0          23m
+voclabs:~/environment (master) $ 
