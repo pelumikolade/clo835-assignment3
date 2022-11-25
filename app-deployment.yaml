@@ -1,3 +1,4 @@
+#Deploy the app with default background
 apiVersion: apps/v1
 kind: Deployment
 metadata:
