@@ -1,3 +1,4 @@
+#Deploy configmap for DB Host, User, Port, Database and App Colour
 apiVersion: v1
 
 kind: ConfigMap
@@ -8,8 +9,6 @@ metadata:
 
 data:
 
-  FLASK_APP: app.py
-
   DB_USER: root
 
   DB_HOST: "db-service"
@@ -19,5 +18,3 @@ data:
   DATABASE: "employees"
   
   APP_COLOR: "blue"
-
-  FLASK_APP_PORT: "8080"
