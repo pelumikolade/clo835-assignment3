@@ -54,17 +54,17 @@ k create -f secrets.yaml -n lab7
 #Create the configmap
 k create -f config-map.yaml -n lab7                                                                                                                                                                                
 #Create persistent volume
-k create -f pv-hp.yaml -n lab7                                                                                                                                                                                     
+k create -f pv-hp.yaml                                                                                                                                                                                 
 #Create persistent volume vlaim
-k create -f pvc-hp.yaml -n lab7                                                                                                                                                                                    
+k create -f pvc-hp.yaml -n lab3                                                                                                                                                                          
 #create the db deployment using hostpath
-k create -f ab-deployment-hp.yaml -n lab7                                                                                                                                                                          
+k create -f db-deployment-hp.yaml -n lab3                                                                                                                                                                          
 #Verify the db pod was created
 k po -n lab7
 #Create the db service
-k create -f db-service.yaml -lab7
+k create -f db-service.yaml -lab3
 #create the app deployment
-k apply -f app-deployment.yaml -n lab7
+k apply -f app-deployment.yaml -n lab3
 #Verify the app has been deployed
 k get po -n lab7
 #Deploy the app service
