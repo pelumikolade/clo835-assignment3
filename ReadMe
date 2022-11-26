@@ -7,18 +7,18 @@ Steps:
 
 Using Storage class and PVC
 
+#Confirm that the cluster with 2 worker nodes is running
+k get nodes
 #Create base64 encoded password
 echo -n 'admin' | base64
+#Create storage class
+k create -f storage_class.yaml -n lab3
 #Create the Namspace
 k create ns lab3
 #Create the secrets
-k create -f secrets.yaml -n lab3                                                                                                                                                                                   
+k create -f secret.yaml -n lab3                                                                                                                                                                                   
 #Create configmap
 k create -f config-map.yaml -n lab3                                                                                                                                                                                
-#Create storage class
-k create -f storage_class.yaml -n lab3
-#Create PV
-k create -f pv.yaml -n lab3
 #Create PVC
 k create -f pvc.yaml -n lab3                                                                                                                                                                                       
 #Create the deployment of the Database
@@ -69,7 +69,7 @@ k apply -f app-deployment.yaml -n lab7
 k get po -n lab7
 #Deploy the app service
 k create -f app-service.yaml -n lab7
-#get the url for the load balancer like we did before                                                                3306/TCP         2m9s
+#get the url for the load balancer like we did before                                           
 #open a browser and verify you have access to the app.
 #Perform all other checks by deleting the pods and checking for persistent data like we did before.
 
